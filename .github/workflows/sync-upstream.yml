@@ -1,0 +1,60 @@
+name: Sync upstream
+
+# Mirrors skills from mattpocock/skills and regenerates plugin.json so that
+# every skill across every scope is registered for the Claude Code plugin.
+
+on:
+  schedule:
+    - cron: "23 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-upstream
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch upstream
+        run: |
+          git remote add upstream https://github.com/mattpocock/skills.git
+          git fetch upstream main
+
+      - name: Mirror skills/ from upstream
+        run: |
+          git rm -r --quiet --ignore-unmatch skills
+          git checkout upstream/main -- skills
+
+      - name: Regenerate plugin.json with every skill
+        run: |
+          skills=$(find skills -name SKILL.md -type f \
+            | sed 's#/SKILL.md$##; s#^#./#' \
+            | sort \
+            | jq -R . | jq -s .)
+          git show upstream/main:.claude-plugin/plugin.json \
+            | jq --argjson s "$skills" '.skills = $s' \
+            > .claude-plugin/plugin.json
+
+      - name: Commit & push if changed
+        run: |
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes from upstream."
+          else
+            git commit -m "chore: sync skills from mattpocock/skills upstream"
+            git push
+          fi
