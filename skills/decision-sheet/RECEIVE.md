@@ -2,7 +2,7 @@
 
 用語と論点の種類は [SKILL.md](SKILL.md) にある。
 
-1. **照合する。** `schema` が `decision-sheet/1` か、`source.sha` が `source.repo` の今の HEAD と同じかを確かめる。sha が古ければ、`git diff --stat <sha>..HEAD` でその間の変更が触れる論点を挙げ、そのまま進めるかを人に聞く。
+1. **照合する。** `schema` が `decision-sheet/1` か、`source.sha` が `source.repo` の既定ブランチの最新（fetch してから）と同じかを確かめる。sha が古ければ、`git diff --stat <sha>..origin/<既定ブランチ>` でその間の変更が触れる論点を挙げ、そのまま進めるかを人に聞く。
    完了：照合の結果を1行で伝えた。
 2. **処理先に落とす。** 論点ごとに、`decision` の値から下の表の処理を決める。推奨と違う裁定も、その裁定どおりに進める。案の中身は `label` と `memo` から読む。
    完了：すべての論点が表のどれかの行に落ちている。
