@@ -14,6 +14,7 @@
 3. **外枠を用意する。** リポジトリの `docs/decision/chrome.html` を読む。なければ、アプリの CSS の色の変数とヘッダーの見た目から作り、リポジトリへのコミットを提案する。書式は、`.frame` 自身とその内側だけに効く `<style>` と、`<template id="chrome">…<!--SLOT-->…</template>` の2つ。
    完了：シートに貼る chrome.html がある。
 4. **シートを組む。** `~/.claude/skills/decision-sheet/shell.html` を作業場所に写す。CHROME 区画に chrome.html を、SHEET 区画に `SHEET` と `TOPICS` を書き、`<title>` の中身を `SHEET.title` と同じにする。書式は、shell.html の SHEET 区画に付いている例（3種類の論点と小問を1つずつ含む）に従う。`render` は静的な HTML 文字列を返すので、カーソルに応じて動く物は、開いた状態の静止画で描く。ラウンドでも、前のシートではなく shell.html から組む。
-   完了：`node ~/.claude/skills/decision-sheet/check.mjs <シート>` が `ok` を出す。
+   点検は案同士の HTML の文字列しか比べないので、クラス名だけ違って見た目が同じ案も通る。見た目はブラウザで確かめる。シートは断片なので、手元で開くときは `<!doctype html><meta charset="utf-8">` を先頭に足した写しを開く。
+   完了：`node ~/.claude/skills/decision-sheet/check.mjs <シート>` が `ok` を出し、ブラウザで各案をスマホと PC の両方の幅で開いた画面写真で、案同士の見た目が違い、それぞれ pro・con の説明どおりに描けていることを確かめた。
 5. **公開する。** Artifact で公開する。タイトルは「<プロジェクト> 裁定シート <月/日>」にする。チャットには URL、論点の数、照合に使う sha を1行で伝える。
    完了：URL を伝えた。
