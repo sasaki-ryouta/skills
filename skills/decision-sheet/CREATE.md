@@ -2,8 +2,8 @@
 
 用語と論点の種類は [SKILL.md](SKILL.md) にある。
 
-1. **問いを立てる。** 論点ごとに、問いを1行、現状の事実を1〜2文で書き、種類（形・細部・対比）を決める。ラウンドなら、前回の裁定とそのメモを事実に書く。
-   完了：すべての論点に問い・事実・種類があり、論点は7つ以内。
+1. **問いを立てる。** 論点ごとに、問いを1行、現状の事実を1〜2文で書き、種類（形・細部・対比）を決める。`source.repo` の issue を論点の語で検索し、同じ論点を扱う issue があれば、その番号を `issue` に入れる。その issue にすでに裁定が書かれていれば、その論点はシートに載せずに人に伝える。決め直すなら、ラウンドとして組む。ラウンドなら、前回の裁定とそのメモを事実に書く。
+   完了：すべての論点に、問い・事実・種類と issue の検索結果（番号か「なし」）があり、論点は7つ以内。
 2. **案を作る。**
    - 形の論点は、prototype スキルの UI.md（`~/.claude/plugins/cache/mattpocock/mattpocock-skills/*/skills/engineering/prototype/UI.md`）の手順 1「State the question and pick N」と手順 2「Generate radically different variants」に従う。
    - 細部の論点は対照で作る。
