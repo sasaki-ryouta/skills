@@ -54,7 +54,7 @@ ESM、依存なし（Node 22 の標準モジュールだけ）。
 - `fillRest(state, TOPICS)`：decision が `'undecided'` の論点だけ、decision を recommended、via を `'bulk'` にする。そのとき埋めた論点に限り、sub の答えが `'undecided'` で sub.recommended があれば、それで埋める。すでに裁定済みの論点の sub は埋めない（一括で入ったことが JSON から見分けられなくなるため）。
 - `clearDecisions(state, TOPICS)`：すべての論点の decision を `'undecided'`、via を null、sub の答えを `'undecided'` に戻す。view・memo・note は変えない（一括で埋めたのを取り消すため。書いたメモは消さない）。
 - `setMemo(state, id, text)`、`setNote(state, text)`：論点のメモ、全体メモを変える。
-- `restoreState(saved, TOPICS)`：localStorage から読んだ値を今の TOPICS に合わせて state にする。saved が object でない、または saved.topics が object でなければ initialState を返す。今の TOPICS の各論点について、saved.topics[id] が object で sig が今の sig と同じなら、その論点の状態（decision・via・view・memo・sub）を引き継ぐ。それ以外は initialState の論点にする（案や推奨が変わった論点の古い裁定を、人が新しい案を見ないまま書き出さないため）。今の TOPICS にない論点は捨てる。saved.note が文字列なら引き継ぐ。
+- `restoreState(saved, TOPICS)`：localStorage から読んだ値を今の TOPICS に合わせて state にする。saved が object でない、または saved.topics が object でなければ initialState を返す。今の TOPICS の各論点について、saved.topics[id] が object で sig が今の sig と同じなら、その論点の状態（decision・via・view・memo・sub）を引き継ぐ。ただし decision は、via が `'pick'` か `'bulk'` のときだけ via と一緒に引き継ぐ（via のない裁定は、人が選んだのか分からないため）。それ以外は initialState の論点にする（案や推奨が変わった論点の古い裁定を、人が新しい案を見ないまま書き出さないため）。今の TOPICS にない論点は捨てる。saved.note が文字列なら引き継ぐ。
 - 状態の関数はすべて新しい state を返す。呼び出し側は戻り値を使う。
 - `buildDecisions(SHEET, TOPICS, state, exportedAt)` → 下の「裁定 JSON」のオブジェクト。
 
@@ -92,7 +92,13 @@ ESM、依存なし（Node 22 の標準モジュールだけ）。
   - contrast：設計と実装の文を 2 列で並べる（モックなし）。
   - 右の欄が裁定（決める）。ラジオで選ぶ。shape・detail は各案（current は「現状のまま」と出す）、「保留する」、「どれも採らない（メモに方針を）」。contrast は「実装を設計に合わせる」「設計を変える」「保留する」。推奨の選択肢に「推奨」の札を付ける。sub があれば小問のラジオ、メモ欄、状態の札（未裁定／裁定: <label>／一括で推奨: <label>）。札は `data-state`（`undecided`・`picked`・`bulk`）で色を変える。
 - 全体メモの欄（state.note）。メモと全体メモの変更は core.setMemo・setNote を通す。
-- 画面下に固定のドック：「裁定済み n / N」、「残りを推奨で埋める」（ページを再読み込みせず、state を更新して描き直す。保存できない環境でも裁定が消えないように）、「裁定をリセット」（core.clearDecisions。1 度押すと「もう一度押すとリセット」に変わり、4 秒以内にもう一度押すと実行して「裁定をリセットしました。メモは残しています。」と出す。ダブルクリックで実行しないよう、構えてから 0.5 秒は 2 度目を受け付けない。2 つの文言を同じマスに重ねて長いほうの幅を常に取り、構えても幅が変わらない（ドックの並びが組み直されてちらつかないように）。Artifact では confirm() が出ないため）、「JSON をコピー」、状態のメッセージ（`role="status"`。状態が変わったら消す。空のときも 1 行分の高さを取り、出し入れでドックの高さが変わらない）。ドックの下端の余白に `env(safe-area-inset-bottom)` を足す（Artifact の包みは `viewport-fit=cover` を持つ）。ドックが最後の内容を隠さないよう、本文の下に余白を取る。
+- 画面下に固定のドック。ドックが最後の内容を隠さないよう、本文の下に余白を取る。文言や件数が変わっても、ボタンの幅・位置とドックの高さを変えない（並びが組み直されてちらつかないように）。
+  - 「裁定済み n / N」：数字は等幅フォントで描く（本文の書体は数字の幅がそろわず、tabular-nums も効かない）。
+  - 「残りを推奨で埋める」：ページを再読み込みせず、state を更新して描き直す（保存できない環境でも裁定が消えないように）。
+  - 「裁定をリセット」：core.clearDecisions を呼ぶ。Artifact では confirm() が出ないので、2 度押しで確定する。1 度押すと「もう一度押すとリセット」に変わり、4 秒以内にもう一度押すと実行して「リセットしました。メモは残っています。」と出す。ダブルクリックで実行しないよう、構えてから 0.5 秒は 2 度目を受け付けない。2 つの文言を同じマスに重ね、長いほうの幅を常に取る。
+  - 「JSON をコピー」。
+  - 状態のメッセージ（`role="status"`）：状態が変わったら消す。空のときも 1 行分の高さを取り、1 行に収まらない分は省略記号で切る。
+  - 下端の余白に `env(safe-area-inset-bottom)` を足す（Artifact の包みは `viewport-fit=cover` を持つ）。
 - JSON の欄（readonly の textarea）。状態が変わるたびに buildDecisions で作り直す。コピーに失敗したら欄を選択状態にして、⌘C / Ctrl+C を促す。
 - 下書き：state を localStorage に保存する。キーは `'decision-sheet:' + SHEET.id`。読み書きはすべて try/catch で包み、読めなくても動く。読み戻しは core.restoreState を通す。
 - 自己検査：読み込み時に `core.validate` を走らせ、エラーがあれば先頭に「内部エラー」として一覧を出す。

@@ -61,7 +61,8 @@
     --accent: #047857;
     --accent-soft: #dcf2e9;
     --mark: #d9468b;
-    /* 状態の意味トークン（文字・背景・枠の 3 点で 1 組）。未裁定は --soft と --line で描く */
+    /* 状態の意味トークン（文字・背景・枠の 3 点で 1 組）。未裁定は --soft と --line で描く。 */
+    /* success は今は --accent と同じ値だが、強調色を変えても「選んだ裁定は緑」のままにするため別に持つ */
     --success-fg: #047857;
     --success-bg: #dcf2e9;
     --success-line: #86cfb0;
@@ -277,6 +278,8 @@
     border-radius: 99px;
     color: var(--soft);
     background: var(--panel);
+  }
+  .status, .btn.reset {
     transition: color 0.15s, background-color 0.15s, border-color 0.15s;
   }
   .status[data-state="picked"] {
@@ -310,15 +313,18 @@
     flex-basis: 100%;
     min-height: 1lh;
     font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
-  .dock #count {
-    font-variant-numeric: tabular-nums;
+  /* 本文の書体は数字の幅がそろわない（tabular-nums も効かない）ので、数字だけ等幅で描き、件数が変わってもボタンが動かないようにする */
+  .dock .count-num {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
   }
   /* 2 つの文言を同じマスに重ね、長いほうの幅を常に取る（構えたときに幅が変わってドックが組み直されないように） */
   .btn.reset {
     display: inline-grid;
     justify-items: center;
-    transition: color 0.15s, background-color 0.15s, border-color 0.15s;
   }
   .btn.reset > span {
     grid-area: 1 / 1;
@@ -343,6 +349,7 @@
   .errors {
     border-color: var(--danger-line);
     color: var(--danger-fg);
+    background: var(--danger-bg);
   }
   [hidden] {
     display: none !important;
@@ -400,7 +407,7 @@
   </section>
 </main>
 <aside class="dock">
-  <span id="count"></span>
+  <span id="count">裁定済み <span class="count-num"></span></span>
   <button class="btn" id="fill" type="button">残りを推奨で埋める</button>
   <button class="btn reset" id="reset" type="button"><span class="reset-idle">裁定をリセット</span><span class="reset-armed">もう一度押すとリセット</span></button>
   <button class="btn primary" id="copy" type="button">JSON をコピー</button>
@@ -694,8 +701,11 @@
             ? ["fix", "amend", "hold"]
             : [...topic.variants.map((variant) => variant.key), "hold", "none"];
           const restored = fresh.topics[topic.id];
-          if (allowedDecisions.includes(previous.decision)) restored.decision = previous.decision;
-          if (["pick", "bulk"].includes(previous.via)) restored.via = previous.via;
+          // via のない裁定は、人が選んだのか分からないので戻さない
+          if (allowedDecisions.includes(previous.decision) && ["pick", "bulk"].includes(previous.via)) {
+            restored.decision = previous.decision;
+            restored.via = previous.via;
+          }
           if (topic.kind !== "contrast" && topic.variants.some((variant) => variant.key === previous.view)) {
             restored.view = previous.view;
           }
@@ -825,7 +835,7 @@
       select("#json-out").value = JSON.stringify(output, null, 2);
       // 前の操作のお知らせ（コピーしました など）は、状態が変わった時点で古くなる
       select("#status").textContent = "";
-      select("#count").textContent = "裁定済み " +
+      select("#count .count-num").textContent =
         output.decisions.filter((decision) => decision.decision !== "undecided").length +
         " / " + TOPICS.length;
       save();
@@ -916,10 +926,12 @@
       function paintStatus() {
         const chosen = choices.find((choice) => choice[0] === topicState.decision);
         const status = section.querySelector(".status");
-        status.textContent = topicState.decision === "undecided" ? "未裁定" :
-          (topicState.via === "bulk" ? "一括で推奨: " : "裁定: ") + (chosen?.[1] || topicState.decision);
-        status.dataset.state = topicState.decision === "undecided" ? "undecided" :
+        const chipState = topicState.decision === "undecided" ? "undecided" :
           (topicState.via === "bulk" ? "bulk" : "picked");
+        const chipPrefix = { picked: "裁定: ", bulk: "一括で推奨: " };
+        status.dataset.state = chipState;
+        status.textContent = chipState === "undecided" ? "未裁定" :
+          chipPrefix[chipState] + (chosen?.[1] || topicState.decision);
       }
       decisionFieldset.onchange = (event) => {
         if (event.target.type === "radio") {
@@ -997,7 +1009,7 @@
       state = core.clearDecisions(state, TOPICS);
       repaintAll();
       refresh();
-      select("#status").textContent = "裁定をリセットしました。メモは残しています。";
+      select("#status").textContent = "リセットしました。メモは残っています。";
     };
     select("#copy").onclick = async () => {
       const output = select("#json-out");
@@ -1007,7 +1019,7 @@
       } catch {
         output.focus();
         output.select();
-        select("#status").textContent = "コピーできません。⌘C / Ctrl+C でコピーしてください。";
+        select("#status").textContent = "選択しました。⌘C / Ctrl+C でコピー";
       }
     };
     refresh();

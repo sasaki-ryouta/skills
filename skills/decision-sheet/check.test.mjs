@@ -340,6 +340,14 @@ test('案を消した・小問の key を変えた論点も、未裁定と現状
   assert.deepEqual([tip.decision, tip.label, tip.via, tip.sub], ['undecided', null, null, { range: 'all' }]);
 });
 
+test('下書きの裁定は via が pick か bulk のときだけ読み戻す（人が選んだか分からない裁定を書き出さない）', () => {
+  const s = load();
+  const saved = plain(s.core.decide(s.core.initialState(s.TOPICS), 'tip', 'B'));
+  saved.topics.tip.via = null;
+  const out = exported(s, s.core.restoreState(saved, s.TOPICS));
+  assert.deepEqual([out.decisions[0].decision, out.decisions[0].via], ['undecided', null]);
+});
+
 test('壊れた下書き（null や形の違う値）からでも初期状態で読み戻す', () => {
   const s = load();
   for (const saved of [null, 'x', { topics: null }, { topics: { tip: 'B' } }]) {
