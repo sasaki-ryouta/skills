@@ -4,7 +4,11 @@
 // 2. シートは shell.html を写して2つの区画だけを書く。前のシートへの継ぎ足し（doctype の二重、CSS の積層）を公開前に止める。
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, mkdtempSync, symlinkSync, rmSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { check, loadSheet } from './check.mjs';
 
 const SHELL = readFileSync(new URL('./shell.html', import.meta.url), 'utf8');
@@ -65,6 +69,15 @@ const load = () => loadSheet(sheet());
 const exported = ({ SHEET, TOPICS, core }, state) => plain(core.buildDecisions(SHEET, TOPICS, state, AT));
 
 // ---- ① 公開前の点検 ----
+
+test('シンボリックリンク経由で CLI を呼んでも点検が走る（~/.claude/skills へはリンクで入れる）', () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'decision-sheet-'));
+  const link = path.join(dir, 'decision-sheet');
+  symlinkSync(path.dirname(fileURLToPath(import.meta.url)), link);
+  const run = spawnSync(process.execPath, [path.join(link, 'check.mjs'), path.join(link, 'shell.html')], { encoding: 'utf8' });
+  rmSync(dir, { recursive: true });
+  assert.equal(run.stdout.trim(), 'ok: 3 topics');
+});
 
 test('shell.html そのままでも点検に通る（付属の例のシートが正しい）', () => {
   assert.deepEqual(codes(check(SHELL, SHELL)), []);

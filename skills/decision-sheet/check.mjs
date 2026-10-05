@@ -1,7 +1,6 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import vm from "node:vm";
-import path from "node:path";
 
 function region(html, begin, end) {
   const start = html.indexOf(begin);
@@ -108,7 +107,8 @@ export function check(html, shellHtml) {
 }
 
 const self = fileURLToPath(import.meta.url);
-const invoked = process.argv[1] && path.resolve(process.argv[1]) === self;
+// シンボリックリンク経由で呼ばれても自分と判定できるよう、実体のパスで比べる
+const invoked = process.argv[1] && realpathSync(process.argv[1]) === self;
 if (invoked) {
   const input = process.argv[2];
   if (!input) {
