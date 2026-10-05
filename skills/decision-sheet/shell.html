@@ -60,8 +60,17 @@
     --line: #d6ddda;
     --accent: #047857;
     --accent-soft: #dcf2e9;
-    --warn: #a16207;
     --mark: #d9468b;
+    /* 状態の意味トークン（文字・背景・枠の 3 点で 1 組）。未裁定は --soft と --line で描く */
+    --success-fg: #047857;
+    --success-bg: #dcf2e9;
+    --success-line: #86cfb0;
+    --warning-fg: #8a5300;
+    --warning-bg: #fdf0d5;
+    --warning-line: #e2b45c;
+    --danger-fg: #b42318;
+    --danger-bg: #fde7e4;
+    --danger-line: #ef9a90;
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
@@ -73,8 +82,16 @@
       --line: #343f3a;
       --accent: #34d399;
       --accent-soft: #143c2e;
-      --warn: #fbbf24;
       --mark: #f472b6;
+      --success-fg: #34d399;
+      --success-bg: #143c2e;
+      --success-line: #2a7a5a;
+      --warning-fg: #fbbf24;
+      --warning-bg: #3b2c0b;
+      --warning-line: #8a6516;
+      --danger-fg: #f87171;
+      --danger-bg: #3f1818;
+      --danger-line: #8f3434;
       color-scheme: dark;
     }
   }
@@ -86,8 +103,16 @@
     --line: #343f3a;
     --accent: #34d399;
     --accent-soft: #143c2e;
-    --warn: #fbbf24;
     --mark: #f472b6;
+    --success-fg: #34d399;
+    --success-bg: #143c2e;
+    --success-line: #2a7a5a;
+    --warning-fg: #fbbf24;
+    --warning-bg: #3b2c0b;
+    --warning-line: #8a6516;
+    --danger-fg: #f87171;
+    --danger-bg: #3f1818;
+    --danger-line: #8f3434;
     color-scheme: dark;
   }
   * {
@@ -245,11 +270,26 @@
     min-height: 64px;
   }
   .status {
+    justify-self: start;
     font-size: 12px;
+    padding: 2px 10px;
+    border: 1px dashed var(--line);
+    border-radius: 99px;
     color: var(--soft);
+    background: var(--panel);
+    transition: color 0.15s, background-color 0.15s, border-color 0.15s;
   }
-  .done {
-    color: var(--accent);
+  .status[data-state="picked"] {
+    border-style: solid;
+    border-color: var(--success-line);
+    color: var(--success-fg);
+    background: var(--success-bg);
+  }
+  .status[data-state="bulk"] {
+    border-style: solid;
+    border-color: var(--warning-line);
+    color: var(--warning-fg);
+    background: var(--warning-bg);
   }
   .dock {
     position: fixed;
@@ -268,7 +308,28 @@
   }
   .dock #status {
     flex-basis: 100%;
+    min-height: 1lh;
     font-size: 13px;
+  }
+  .dock #count {
+    font-variant-numeric: tabular-nums;
+  }
+  /* 2 つの文言を同じマスに重ね、長いほうの幅を常に取る（構えたときに幅が変わってドックが組み直されないように） */
+  .btn.reset {
+    display: inline-grid;
+    justify-items: center;
+    transition: color 0.15s, background-color 0.15s, border-color 0.15s;
+  }
+  .btn.reset > span {
+    grid-area: 1 / 1;
+  }
+  .btn.reset:not([data-armed]) .reset-armed, .btn.reset[data-armed] .reset-idle {
+    visibility: hidden;
+  }
+  .btn.reset[data-armed] {
+    border-color: var(--danger-line);
+    color: var(--danger-fg);
+    background: var(--danger-bg);
   }
   .btn.primary {
     background: var(--accent);
@@ -280,8 +341,8 @@
     font: 12px/1.5 "JetBrains Mono", ui-monospace, monospace;
   }
   .errors {
-    border-color: var(--warn);
-    color: var(--warn);
+    border-color: var(--danger-line);
+    color: var(--danger-fg);
   }
   [hidden] {
     display: none !important;
@@ -341,7 +402,7 @@
 <aside class="dock">
   <span id="count"></span>
   <button class="btn" id="fill" type="button">残りを推奨で埋める</button>
-  <button class="btn" id="reset" type="button">裁定をリセット</button>
+  <button class="btn reset" id="reset" type="button"><span class="reset-idle">裁定をリセット</span><span class="reset-armed">もう一度押すとリセット</span></button>
   <button class="btn primary" id="copy" type="button">JSON をコピー</button>
   <span id="status" role="status"></span>
 </aside>
@@ -857,7 +918,8 @@
         const status = section.querySelector(".status");
         status.textContent = topicState.decision === "undecided" ? "未裁定" :
           (topicState.via === "bulk" ? "一括で推奨: " : "裁定: ") + (chosen?.[1] || topicState.decision);
-        status.className = "status" + (topicState.decision === "undecided" ? "" : " done");
+        status.dataset.state = topicState.decision === "undecided" ? "undecided" :
+          (topicState.via === "bulk" ? "bulk" : "picked");
       }
       decisionFieldset.onchange = (event) => {
         if (event.target.type === "radio") {
@@ -921,11 +983,11 @@
     function disarmReset() {
       clearTimeout(resetTimer);
       resetTimer = null;
-      resetButton.textContent = "裁定をリセット";
+      delete resetButton.dataset.armed;
     }
     resetButton.onclick = () => {
       if (!resetTimer) {
-        resetButton.textContent = "もう一度押すとリセット";
+        resetButton.dataset.armed = "true";
         resetArmedAt = Date.now();
         resetTimer = setTimeout(disarmReset, 4000);
         return;

@@ -86,13 +86,13 @@ ESM、依存なし（Node 22 の標準モジュールだけ）。
 土台は 2026-09-30 に実際に使った裁定シート（非公開）。見た目と構成はこれを引き継ぎ、次のとおりに変える・足す。
 
 - `<title>` と h1 は SHEET.title。ヘッダーのメタ行に repo と sha、SHEET.lead を本文の先頭に置く。
-- テーマ：色は `:root` のトークンで持つ。ダークは `@media (prefers-color-scheme: dark)` の `:root:not([data-theme="light"])` と、`:root[data-theme="dark"]` の両方に同じ値で定義する。body に背景色を置く。`.frame` の中（モック）は外枠の CSS の色で描く。
+- テーマ：色は `:root` のトークンで持つ。状態は意味トークン（`--success-*`・`--warning-*`・`--danger-*`。それぞれ `-fg`・`-bg`・`-line` の 3 点で 1 組）で描く：1 つずつ選んだ論点は success、一括で推奨は warning（人が 1 つずつは見ていない）、未裁定は `--soft` と点線の `--line`、リセットの構えと内部エラーは danger。色の切り替えには 0.15 秒の遷移を付ける。ダークは `@media (prefers-color-scheme: dark)` の `:root:not([data-theme="light"])` と、`:root[data-theme="dark"]` の両方に同じ値で定義する。body に背景色を置く。`.frame` の中（モック）は外枠の CSS の色で描く。
 - 論点ごとの帯：見出し（issue があれば `#番号` と `https://github.com/<repo>/issues/<番号>` へのリンク）、fact、推奨とその理由。
   - shape・detail：案のタブ（見る。`aria-pressed`）、スマホ／PC の幅の切替（`.frame` を max-width 390px と 100% で切り替え、`.frame` は `container-type: inline-size`。この `.frame` の土台の CSS と、chg の印（点線の枠。モックは外枠の明るい色で描くので、ページのテーマに合わせず固定色）の CSS は CHROME 区画ではなく shell 自身の CSS に置く。CHROME 区画は差し替えられるため。土台は詳細度 0 にして外枠の `.frame` の指定を優先し、`isolation: isolate` でモックの z-index をフレームの中に閉じ込める）、モック（render が自分で `ctx.chrome` を呼ぶので、shell は render の戻り値を包まずにそのまま入れる）、表示中の案の pro（＋）と con（－）、凡例「点線の枠 = 現状から変わる所」。
   - contrast：設計と実装の文を 2 列で並べる（モックなし）。
-  - 右の欄が裁定（決める）。ラジオで選ぶ。shape・detail は各案（current は「現状のまま」と出す）、「保留する」、「どれも採らない（メモに方針を）」。contrast は「実装を設計に合わせる」「設計を変える」「保留する」。推奨の選択肢に「推奨」の札を付ける。sub があれば小問のラジオ、メモ欄、状態の表示（未裁定／裁定: <label>／一括で推奨: <label>）。
+  - 右の欄が裁定（決める）。ラジオで選ぶ。shape・detail は各案（current は「現状のまま」と出す）、「保留する」、「どれも採らない（メモに方針を）」。contrast は「実装を設計に合わせる」「設計を変える」「保留する」。推奨の選択肢に「推奨」の札を付ける。sub があれば小問のラジオ、メモ欄、状態の札（未裁定／裁定: <label>／一括で推奨: <label>）。札は `data-state`（`undecided`・`picked`・`bulk`）で色を変える。
 - 全体メモの欄（state.note）。メモと全体メモの変更は core.setMemo・setNote を通す。
-- 画面下に固定のドック：「裁定済み n / N」、「残りを推奨で埋める」（ページを再読み込みせず、state を更新して描き直す。保存できない環境でも裁定が消えないように）、「裁定をリセット」（core.clearDecisions。1 度押すと「もう一度押すとリセット」に変わり、4 秒以内にもう一度押すと実行して「裁定をリセットしました。メモは残しています。」と出す。ダブルクリックで実行しないよう、構えてから 0.5 秒は 2 度目を受け付けない。Artifact では confirm() が出ないため）、「JSON をコピー」、状態のメッセージ（`role="status"`。状態が変わったら消す）。ドックの下端の余白に `env(safe-area-inset-bottom)` を足す（Artifact の包みは `viewport-fit=cover` を持つ）。ドックが最後の内容を隠さないよう、本文の下に余白を取る。
+- 画面下に固定のドック：「裁定済み n / N」、「残りを推奨で埋める」（ページを再読み込みせず、state を更新して描き直す。保存できない環境でも裁定が消えないように）、「裁定をリセット」（core.clearDecisions。1 度押すと「もう一度押すとリセット」に変わり、4 秒以内にもう一度押すと実行して「裁定をリセットしました。メモは残しています。」と出す。ダブルクリックで実行しないよう、構えてから 0.5 秒は 2 度目を受け付けない。2 つの文言を同じマスに重ねて長いほうの幅を常に取り、構えても幅が変わらない（ドックの並びが組み直されてちらつかないように）。Artifact では confirm() が出ないため）、「JSON をコピー」、状態のメッセージ（`role="status"`。状態が変わったら消す。空のときも 1 行分の高さを取り、出し入れでドックの高さが変わらない）。ドックの下端の余白に `env(safe-area-inset-bottom)` を足す（Artifact の包みは `viewport-fit=cover` を持つ）。ドックが最後の内容を隠さないよう、本文の下に余白を取る。
 - JSON の欄（readonly の textarea）。状態が変わるたびに buildDecisions で作り直す。コピーに失敗したら欄を選択状態にして、⌘C / Ctrl+C を促す。
 - 下書き：state を localStorage に保存する。キーは `'decision-sheet:' + SHEET.id`。読み書きはすべて try/catch で包み、読めなくても動く。読み戻しは core.restoreState を通す。
 - 自己検査：読み込み時に `core.validate` を走らせ、エラーがあれば先頭に「内部エラー」として一覧を出す。
