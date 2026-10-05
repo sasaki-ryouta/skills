@@ -1,0 +1,953 @@
+<title>サンプル裁定シート</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap"
+>
+<!-- CHROME:BEGIN -->
+<style>
+  .frame .screen {
+    min-width: 0;
+  }
+  .frame table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  .frame th, .frame td {
+    padding: 6px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+  }
+  .frame .mock-head {
+    font-weight: 700;
+    margin: 0 0 8px;
+  }
+</style>
+<template id="chrome">
+  <header class="mock-head">業務アプリ</header>
+  <!--SLOT-->
+</template>
+<!-- CHROME:END -->
+<style>
+  /* 詳細度 0 の土台。外枠の .frame の指定（背景・文字色・余白）が勝つ */
+  :where(.frame-wrap .frame) {
+    margin: auto;
+    max-width: 390px;
+    container-type: inline-size;
+    isolation: isolate;
+    overflow-x: auto;
+    font-family: system-ui, sans-serif;
+    color: #17201c;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    padding: 14px;
+  }
+  .frame-wrap[data-width="100%"] .frame {
+    max-width: 100%;
+  }
+  .frame .chg {
+    outline: 2px dashed #d9468b;
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+  :root {
+    --bg: #f6f7f6;
+    --panel: #fff;
+    --ink: #17201c;
+    --soft: #4e5c56;
+    --line: #d6ddda;
+    --accent: #047857;
+    --accent-soft: #dcf2e9;
+    --warn: #a16207;
+    --mark: #d9468b;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #111614;
+      --panel: #1b211f;
+      --ink: #e5ece8;
+      --soft: #a0b0a9;
+      --line: #343f3a;
+      --accent: #34d399;
+      --accent-soft: #143c2e;
+      --warn: #fbbf24;
+      --mark: #f472b6;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #111614;
+    --panel: #1b211f;
+    --ink: #e5ece8;
+    --soft: #a0b0a9;
+    --line: #343f3a;
+    --accent: #34d399;
+    --accent-soft: #143c2e;
+    --warn: #fbbf24;
+    --mark: #f472b6;
+    color-scheme: dark;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.65 "BIZ UDPGothic", sans-serif;
+  }
+  .wrap {
+    max-width: 1180px;
+    margin: auto;
+    padding: 28px 16px 190px;
+    display: grid;
+    gap: 24px;
+  }
+  h1 {
+    font-size: 1.6rem;
+    line-height: 1.3;
+    margin: 8px 0;
+  }
+  .meta, .soft, .legend {
+    color: var(--soft);
+  }
+  .meta {
+    font: 12px "JetBrains Mono", ui-monospace, monospace;
+  }
+  .lead {
+    max-width: 70ch;
+  }
+  .topic, .export, .errors {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 18px;
+    display: grid;
+    gap: 14px;
+  }
+  .topic-head {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    flex-wrap: wrap;
+  }
+  .topic-head h2 {
+    margin: 0;
+    font-size: 1.2rem;
+  }
+  .topic-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 20px;
+  }
+  .compare {
+    min-width: 0;
+    display: grid;
+    gap: 10px;
+  }
+  .ruling {
+    border-left: 1px solid var(--line);
+    padding-left: 18px;
+    display: grid;
+    gap: 10px;
+    align-content: start;
+  }
+  .ruling fieldset {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 6px;
+  }
+  .ruling fieldset label {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+  }
+  .tabs, .widths {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .tabs button, .widths button, .btn {
+    font: inherit;
+    padding: 6px 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel);
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .tabs [aria-pressed="true"], .widths [aria-pressed="true"] {
+    background: var(--ink);
+    color: var(--panel);
+  }
+  button:focus-visible, input:focus-visible, textarea:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .frame-wrap {
+    max-width: 100%;
+  }
+  .variant-note {
+    margin: 0;
+    color: var(--soft);
+  }
+  .procon {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .procon ul {
+    margin: 4px 0;
+    padding-left: 22px;
+  }
+  .legend {
+    font-size: 12px;
+  }
+  .legend i {
+    display: inline-block;
+    width: 18px;
+    border-top: 2px dashed var(--mark);
+    margin-right: 5px;
+  }
+  .contrast {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .contrast article {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px;
+  }
+  .contrast h3 {
+    margin: 0;
+  }
+  .rec {
+    font-size: 11px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-radius: 99px;
+    padding: 1px 7px;
+  }
+  .ruling textarea, .export textarea {
+    width: 100%;
+    font: inherit;
+    background: var(--bg);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 8px;
+    min-height: 64px;
+  }
+  .status {
+    font-size: 12px;
+    color: var(--soft);
+  }
+  .done {
+    color: var(--accent);
+  }
+  .dock {
+    position: fixed;
+    z-index: 5;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--panel);
+    border-top: 1px solid var(--line);
+    padding: 10px max(16px, calc((100vw - 1148px) / 2));
+    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .dock #status {
+    flex-basis: 100%;
+    font-size: 13px;
+  }
+  .btn.primary {
+    background: var(--accent);
+    color: var(--panel);
+    font-weight: 700;
+  }
+  .export textarea {
+    min-height: 220px;
+    font: 12px/1.5 "JetBrains Mono", ui-monospace, monospace;
+  }
+  .errors {
+    border-color: var(--warn);
+    color: var(--warn);
+  }
+  [hidden] {
+    display: none !important;
+  }
+  @media (max-width: 850px) {
+    .topic-grid {
+      grid-template-columns: 1fr;
+    }
+    .ruling {
+      border-left: 0;
+      border-top: 1px solid var(--line);
+      padding: 14px 0 0;
+    }
+  }
+  @media (max-width: 520px) {
+    .contrast, .procon {
+      grid-template-columns: 1fr;
+    }
+    .wrap {
+      padding-inline: 12px;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      scroll-behavior: auto !important;
+      transition: none !important;
+    }
+  }
+</style>
+<main class="wrap">
+  <header>
+    <p class="meta" id="meta"></p>
+    <h1 id="title"></h1>
+    <p class="lead" id="lead"></p>
+  </header>
+  <section id="errors" class="errors" hidden>
+    <strong>内部エラー</strong>
+    <ul></ul>
+  </section>
+  <div id="topics"></div>
+  <section class="export">
+    <h2>裁定 JSON</h2>
+    <p class="soft">
+      状態が変わるたびに更新します。未裁定の論点は undecided
+      として出力されます。
+    </p><label for="json-out">JSON</label><textarea
+      id="json-out"
+      readonly
+    ></textarea>
+  </section>
+  <section class="export">
+    <h2>全体メモ</h2>
+    <label for="sheet-note">全体メモ</label>
+    <textarea id="sheet-note"></textarea>
+  </section>
+</main>
+<aside class="dock">
+  <span id="count"></span>
+  <button class="btn" id="fill" type="button">残りを推奨で埋める</button>
+  <button class="btn" id="reset" type="button">裁定をリセット</button>
+  <button class="btn primary" id="copy" type="button">JSON をコピー</button>
+  <span id="status" role="status"></span>
+</aside>
+<script>
+  /* SHEET:BEGIN */
+  const SHEET = {
+    id: "example-decision",
+    title: "サンプル裁定シート",
+    source: { repo: "example/app", sha: "abc1234" },
+    lead: "論点ごとに案を見比べ、裁定を選んでください。",
+  };
+  const TOPICS = [
+    {
+      id: "layout",
+      kind: "shape",
+      issue: null,
+      title: "情報の並べ方",
+      fact: "情報を一行で表示しています。",
+      recommended: "A",
+      reason: "まとまりごとに読めます。",
+      variants: [{ key: "current", label: "一行表示", pro: [], con: [] }, {
+        key: "A",
+        label: "カード表示",
+        pro: ["まとまりが見える"],
+        con: ["高さが増える"],
+      }, {
+        key: "B",
+        label: "二列表示",
+        pro: ["一覧しやすい"],
+        con: ["狭い画面で窮屈"],
+      }],
+      render: (key, ctx) =>
+        ctx.chrome(
+          key === "current" ? "<p>名前　状態　更新日</p>" : ctx.chg(
+            key === "A"
+              ? '<section class="screen"><b>名前</b><p>状態・更新日</p></section>'
+              : "<table><tr><th>名前</th><th>状態</th></tr><tr><td>例</td><td>完了</td></tr></table>",
+          ),
+        ),
+    },
+    {
+      id: "detail",
+      kind: "detail",
+      issue: null,
+      title: "説明の見せ方",
+      fact: "補足説明を常に表示しています。",
+      recommended: "B",
+      reason: "必要なときだけ読めます。",
+      variants: [{ key: "current", label: "常に表示", pro: [], con: [] }, {
+        key: "A",
+        label: "折りたたむ",
+        pro: ["画面が短い"],
+        con: ["操作が一つ増える"],
+      }, {
+        key: "B",
+        label: "見出しの下に表示",
+        pro: ["見つけやすい"],
+        con: ["説明が長いと広がる"],
+      }],
+      sub: {
+        key: "scope",
+        question: "適用範囲",
+        recommended: "all",
+        options: [{ key: "all", label: "すべて" }, {
+          key: "new",
+          label: "新規画面のみ",
+        }],
+      },
+      render: (key, ctx) =>
+        ctx.chrome(
+          key === "current"
+            ? "<div><b>項目</b><p>補足説明</p></div>"
+            : ctx.chg(
+              key === "A"
+                ? "<details open><summary>項目</summary><p>補足説明</p></details>"
+                : "<section><h3>項目</h3><p>補足説明</p></section>",
+            ),
+        ),
+    },
+    {
+      id: "behavior",
+      kind: "contrast",
+      issue: null,
+      title: "保存時の動作",
+      fact: "保存後も編集画面にとどまります。",
+      recommended: "fix",
+      reason: "保存結果をすぐ確認できます。",
+      design: "保存後は編集画面にとどまり、結果を表示する。",
+      impl: "保存後に一覧画面へ移動する。",
+    },
+  ];
+  /* SHEET:END */
+</script>
+<script>
+  /* CORE:BEGIN */
+  const core = (() => {
+    function makeCtx(chromeHtml) {
+      return {
+        chg(html) {
+          return '<span class="chg">' + html + "</span>";
+        },
+        chrome(inner) {
+          return chromeHtml.split("<!--SLOT-->").join(inner);
+        },
+      };
+    }
+    function validate(SHEET, TOPICS, ctx) {
+      const errors = [],
+        add = (code, topic, message) =>
+          errors.push({ code, ...(topic ? { topic } : {}), message });
+      if (
+        !SHEET || !SHEET.id || !SHEET.title || !SHEET.source ||
+        !SHEET.source.repo || !SHEET.source.sha
+      ) {
+        add(
+          "missing-field",
+          null,
+          "シートの id・title・source.repo・source.sha は必須です。",
+        );
+      }
+      if (
+        !Array.isArray(TOPICS) || TOPICS.length === 0 || TOPICS.length >= 8
+      ) {
+        add(
+          "too-many-topics",
+          null,
+          "論点は 1 つ以上 7 つ以下にしてください。",
+        );
+      }
+      const ids = new Set();
+      for (const topic of TOPICS || []) {
+        if (
+          !topic || !topic.id || !topic.title || !topic.fact || !topic.reason ||
+          (topic.kind === "contrast" && (!topic.design || !topic.impl))
+        ) {
+          add(
+            "missing-field",
+            topic && topic.id,
+            "論点の必須項目を入力してください。",
+          );
+        }
+        if (!["shape", "detail", "contrast"].includes(topic.kind)) {
+          add(
+            "bad-kind",
+            topic.id,
+            "kind は shape・detail・contrast のいずれかにしてください。",
+          );
+        }
+        if (ids.has(topic.id)) {
+          add("duplicate-id", topic.id, "論点 id が重複しています。");
+        }
+        ids.add(topic.id);
+        if (topic.issue !== null && (!Number.isInteger(topic.issue) || topic.issue <= 0)) {
+          add("bad-issue", topic.id, "issue は正の整数または null にしてください。");
+        }
+        if (topic.kind === "contrast") {
+          if (!["fix", "amend", "hold"].includes(topic.recommended)) {
+            add(
+              "bad-recommended",
+              topic.id,
+              "推奨は fix・amend・hold のいずれかにしてください。",
+            );
+          }
+          continue;
+        }
+        const variants = Array.isArray(topic.variants) ? topic.variants : [];
+        const keys = variants.map((variant) => variant && variant.key);
+        if (variants.some((variant) => !variant || !variant.key || !variant.label)) {
+          add("missing-field", topic.id, "案の key と label は必須です。");
+        }
+        if (!keys.includes("current")) {
+          add("no-current", topic.id, "variants に current が必要です。");
+        }
+        if (keys.filter((variantKey) => variantKey !== "current").length < 2) {
+          add(
+            "too-few-variants",
+            topic.id,
+            "current 以外の案を 2 つ以上用意してください。",
+          );
+        }
+        if (!keys.includes(topic.recommended)) {
+          add(
+            "bad-recommended",
+            topic.id,
+            "recommended は variants の key に含めてください。",
+          );
+        }
+        const rendered = [];
+        for (const variantKey of keys) {
+          try {
+            rendered.push([variantKey, String(topic.render(variantKey, ctx))]);
+          } catch {
+            add("render-error", topic.id, "案 " + variantKey + " の描画で例外が出ました。");
+            rendered.push([variantKey, ""]);
+          }
+        }
+        let same = false;
+        for (let i = 0; i < rendered.length; i++) {
+          for (let nextIndex = i + 1; nextIndex < rendered.length; nextIndex++) {
+            if (rendered[i][1] === rendered[nextIndex][1]) same = true;
+          }
+        }
+        if (same) add("same-render", topic.id, "案同士の描画結果が同じです。");
+        if (
+          rendered.some(([variantKey, html]) =>
+            variantKey !== "current" && !html.includes('class="chg"') &&
+            !html.includes("class='chg'")
+          )
+        ) add("no-chg", topic.id, "current 以外の案に chg の印がありません。");
+        if (topic.sub) {
+          const options = Array.isArray(topic.sub.options) ? topic.sub.options : [];
+          const optionKeys = options.map((option) => option && option.key);
+          if (
+            options.length < 2 || new Set(optionKeys).size !== optionKeys.length ||
+            !optionKeys.includes(topic.sub.recommended)
+          ) {
+            add(
+              "bad-sub",
+              topic.id,
+              "sub の options と recommended を確認してください。",
+            );
+          }
+        }
+      }
+      return errors;
+    }
+    function initialState(TOPICS) {
+      const topics = {};
+      for (const topic of TOPICS) {
+        const topicState = {
+          sig: signature(topic),
+          decision: "undecided",
+          via: null,
+          view: topic.kind === "contrast" ? null : "current",
+          memo: "",
+        };
+        if (topic.sub) topicState.sub = { [topic.sub.key]: "undecided" };
+        topics[topic.id] = topicState;
+      }
+      return { topics, note: "" };
+    }
+    function change(state, id, fn) {
+      return {
+        ...state,
+        topics: { ...state.topics, [id]: fn(state.topics[id]) },
+      };
+    }
+    function view(state, id, key) {
+      return change(state, id, (topicState) => ({ ...topicState, view: key }));
+    }
+    function decide(state, id, value) {
+      return change(
+        state,
+        id,
+        (topicState) => ({ ...topicState, decision: value, via: "pick" }),
+      );
+    }
+    function decideSub(state, id, value) {
+      return change(
+        state,
+        id,
+        (topicState) => ({
+          ...topicState,
+          sub: { ...topicState.sub, [Object.keys(topicState.sub || {})[0]]: value },
+        }),
+      );
+    }
+    function setMemo(state, id, text) {
+      return change(state, id, (topicState) => ({ ...topicState, memo: text }));
+    }
+    function setNote(state, text) {
+      return { ...state, note: text };
+    }
+    function signature(topic) {
+      return JSON.stringify([
+        topic.kind,
+        topic.recommended,
+        (topic.variants || []).map((variant) => [variant.key, variant.label]),
+        topic.sub ? [topic.sub.key, (topic.sub.options || []).map((option) => option.key), topic.sub.recommended] : null,
+      ]);
+    }
+    function restoreState(saved, TOPICS) {
+      const fresh = initialState(TOPICS);
+      if (!saved || typeof saved !== "object" || !saved.topics || typeof saved.topics !== "object") return fresh;
+      for (const topic of TOPICS) {
+        const previous = saved.topics[topic.id];
+        if (previous && typeof previous === "object" && previous.sig === fresh.topics[topic.id].sig) {
+          const allowedDecisions = topic.kind === "contrast"
+            ? ["fix", "amend", "hold"]
+            : [...topic.variants.map((variant) => variant.key), "hold", "none"];
+          const restored = fresh.topics[topic.id];
+          if (allowedDecisions.includes(previous.decision)) restored.decision = previous.decision;
+          if (["pick", "bulk"].includes(previous.via)) restored.via = previous.via;
+          if (topic.kind !== "contrast" && topic.variants.some((variant) => variant.key === previous.view)) {
+            restored.view = previous.view;
+          }
+          if (typeof previous.memo === "string") restored.memo = previous.memo;
+          if (topic.sub && previous.sub && typeof previous.sub === "object") {
+            const subValue = previous.sub[topic.sub.key];
+            if (subValue === "undecided" || topic.sub.options.some((option) => option.key === subValue)) {
+              restored.sub[topic.sub.key] = subValue;
+            }
+          }
+        }
+      }
+      fresh.note = typeof saved.note === "string" ? saved.note : "";
+      return fresh;
+    }
+    function fillRest(state, TOPICS) {
+      let out = { ...state, topics: { ...state.topics } };
+      for (const topic of TOPICS) {
+        const topicState = out.topics[topic.id];
+        let updatedState = { ...topicState, sub: topicState.sub ? { ...topicState.sub } : undefined };
+        const filled = topicState.decision === "undecided";
+        if (filled) updatedState = { ...updatedState, decision: topic.recommended, via: "bulk" };
+        if (
+          filled && topic.sub && updatedState.sub && updatedState.sub[topic.sub.key] === "undecided" &&
+          topic.sub.recommended
+        ) updatedState.sub[topic.sub.key] = topic.sub.recommended;
+        out.topics[topic.id] = updatedState;
+      }
+      return out;
+    }
+    function clearDecisions(state, TOPICS) {
+      let out = state;
+      for (const topic of TOPICS) {
+        out = change(out, topic.id, (topicState) => ({
+          ...topicState,
+          decision: "undecided",
+          via: null,
+          ...(topic.sub ? { sub: { [topic.sub.key]: "undecided" } } : {}),
+        }));
+      }
+      return out;
+    }
+    function buildDecisions(SHEET, TOPICS, state, exportedAt) {
+      const decisions = TOPICS.map((topic) => {
+        const topicState = state.topics[topic.id] || {},
+          decision = topicState.decision || "undecided",
+          variant = (topic.variants || []).find((candidate) => candidate.key === decision);
+        let label = variant ? variant.label : ({
+          fix: "実装を設計に合わせる",
+          amend: "設計を変える",
+          hold: "保留",
+          none: "どの案も採らない",
+          undecided: null,
+        })[decision] ?? null;
+        const result = {
+          topic: topic.id,
+          kind: topic.kind,
+          issue: topic.issue ?? null,
+          decision,
+          label,
+          recommended: topic.recommended,
+          via: decision === "undecided" ? null : (topicState.via || null),
+        };
+        if (topic.sub) {
+          result.sub = { [topic.sub.key]: topicState.sub && topicState.sub[topic.sub.key] || "undecided" };
+        }
+        result.memo = topicState.memo || "";
+        return result;
+      });
+      return {
+        schema: "decision-sheet/1",
+        sheet: SHEET.id,
+        title: SHEET.title,
+        source: { repo: SHEET.source.repo, sha: SHEET.source.sha },
+        exportedAt,
+        decisions,
+        note: state.note || "",
+      };
+    }
+    return {
+      makeCtx,
+      validate,
+      initialState,
+      view,
+      decide,
+      decideSub,
+      fillRest,
+      clearDecisions,
+      setMemo,
+      setNote,
+      restoreState,
+      buildDecisions,
+    };
+  })();
+  /* CORE:END */
+  (function () {
+    const select = (selector) => document.querySelector(selector);
+    const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+    }[character]));
+    const ctx = core.makeCtx(select("#chrome").innerHTML);
+    const errors = core.validate(SHEET, TOPICS, ctx);
+    select("#title").textContent = SHEET.title;
+    document.title = SHEET.title;
+    select("#meta").textContent = SHEET.source.repo + " · " + SHEET.source.sha;
+    select("#lead").textContent = SHEET.lead || "";
+    if (errors.length) {
+      select("#errors").hidden = false;
+      select("#errors ul").innerHTML = errors.map((error) =>
+        "<li>" + escapeHtml(error.code + (error.topic ? ": " + error.topic : "")) + " " +
+        escapeHtml(error.message) + "</li>"
+      ).join("");
+    }
+    const storageKey = "decision-sheet:" + SHEET.id;
+    let saved = null;
+    try {
+      saved = JSON.parse(localStorage.getItem(storageKey) || "null");
+    } catch {}
+    let state = core.restoreState(saved, TOPICS);
+    function save() {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(state));
+      } catch {}
+    }
+    function refresh() {
+      const output = core.buildDecisions(SHEET, TOPICS, state, new Date().toISOString());
+      select("#json-out").value = JSON.stringify(output, null, 2);
+      // 前の操作のお知らせ（コピーしました など）は、状態が変わった時点で古くなる
+      select("#status").textContent = "";
+      select("#count").textContent = "裁定済み " +
+        output.decisions.filter((decision) => decision.decision !== "undecided").length +
+        " / " + TOPICS.length;
+      save();
+    }
+    const note = select("#sheet-note");
+    note.value = state.note;
+    note.oninput = () => {
+      state = core.setNote(state, note.value);
+      refresh();
+    };
+    const root = select("#topics");
+    root.style.display = "grid";
+    root.style.gap = "24px";
+    const repaints = [];
+    for (const topic of TOPICS) {
+      let topicState = state.topics[topic.id];
+      const section = document.createElement("section");
+      section.className = "topic";
+      section.dataset.topic = topic.id;
+      section.innerHTML = '<header class="topic-head"><h2>' + escapeHtml(topic.title) +
+        "</h2>" + (topic.issue != null
+          ? '<a href="https://github.com/' + escapeHtml(SHEET.source.repo) +
+            "/issues/" + topic.issue + '">#' + topic.issue + "</a>" : "") +
+        '</header><p class="soft">' + escapeHtml(topic.fact) +
+        '</p><div class="topic-grid"><div class="compare"></div><div class="ruling"><h3>決める</h3><fieldset><legend>裁定</legend></fieldset><div class="subbox"></div><label>メモ<textarea class="memo"></textarea></label><span class="status"></span></div></div>';
+      root.appendChild(section);
+      const compare = section.querySelector(".compare");
+      const decisionFieldset = section.querySelector(".ruling > fieldset");
+      if (topic.kind === "contrast") {
+        compare.innerHTML = '<div class="contrast"><article><h3>設計</h3>' +
+          escapeHtml(topic.design) + "</article><article><h3>実装</h3>" +
+          escapeHtml(topic.impl) + "</article></div><p><b>推奨:</b> " +
+          escapeHtml(topic.recommended) + " — " + escapeHtml(topic.reason) + "</p>";
+      } else {
+        const buttons = topic.variants.map((variant) =>
+          '<button type="button" data-view="' + escapeHtml(variant.key) +
+          '" aria-pressed="' + (topicState.view === variant.key) + '">' +
+          escapeHtml(variant.label) + "</button>"
+        ).join("");
+        compare.innerHTML = '<div class="tabs" role="group" aria-label="見る案">' + buttons +
+          '</div><p class="variant-note"></p><div class="widths">' +
+          '<button type="button" data-width="390px" aria-pressed="true">スマホ</button>' +
+          '<button type="button" data-width="100%" aria-pressed="false">PC</button>' +
+          '</div><div class="frame-wrap" data-width="390px"><div class="frame"></div></div>' +
+          '<div class="procon"></div><p class="legend"><i></i>点線の枠 = 現状から変わる所</p>' +
+          "<p><b>推奨:</b> " + escapeHtml(topic.recommended) + " — " +
+          escapeHtml(topic.reason) + "</p>";
+        function showVariant(variantKey) {
+          state = core.view(state, topic.id, variantKey);
+          topicState = state.topics[topic.id];
+          const variant = topic.variants.find((candidate) => candidate.key === variantKey);
+          section.querySelector(".frame").innerHTML = topic.render(variantKey, ctx);
+          section.querySelector(".variant-note").textContent = variant.label;
+          section.querySelectorAll("[data-view]").forEach((button) =>
+            button.setAttribute("aria-pressed", String(button.dataset.view === variantKey))
+          );
+          section.querySelector(".procon").innerHTML =
+            "<div><b>＋ 良い点</b><ul>" +
+            ((variant.pro || []).map((point) => "<li>" + escapeHtml(point) + "</li>").join("") || "<li>—</li>") +
+            "</ul></div><div><b>－ 気になる点</b><ul>" +
+            ((variant.con || []).map((point) => "<li>" + escapeHtml(point) + "</li>").join("") || "<li>—</li>") +
+            "</ul></div>";
+          refresh();
+        }
+        section.querySelectorAll("[data-view]").forEach((button) =>
+          button.onclick = () => showVariant(button.dataset.view)
+        );
+        section.querySelectorAll("[data-width]").forEach((button) =>
+          button.onclick = () => {
+            section.querySelector(".frame-wrap").dataset.width = button.dataset.width;
+            section.querySelectorAll("[data-width]").forEach((widthButton) =>
+              widthButton.setAttribute("aria-pressed", String(widthButton === button))
+            );
+          }
+        );
+        showVariant(topicState.view);
+      }
+      const choices = topic.kind === "contrast"
+        ? [["fix", "実装を設計に合わせる"], ["amend", "設計を変える"], ["hold", "保留する"]]
+        : [...topic.variants.map((variant) => [variant.key, variant.key === "current" ? "現状のまま" : variant.label]),
+          ["hold", "保留する"], ["none", "どれも採らない（メモに方針を）"]];
+      decisionFieldset.innerHTML += "<div>" + choices.map(([value, label]) =>
+        '<label><input type="radio" name="d-' + escapeHtml(topic.id) + '" value="' +
+        escapeHtml(value) + '" ' + (topicState.decision === value ? "checked" : "") + "><span>" +
+        escapeHtml(label) + (topic.recommended === value ? ' <b class="rec">推奨</b>' : "") +
+        "</span></label>"
+      ).join("") + "</div>";
+      function paintStatus() {
+        const chosen = choices.find((choice) => choice[0] === topicState.decision);
+        const status = section.querySelector(".status");
+        status.textContent = topicState.decision === "undecided" ? "未裁定" :
+          (topicState.via === "bulk" ? "一括で推奨: " : "裁定: ") + (chosen?.[1] || topicState.decision);
+        status.className = "status" + (topicState.decision === "undecided" ? "" : " done");
+      }
+      decisionFieldset.onchange = (event) => {
+        if (event.target.type === "radio") {
+          state = core.decide(state, topic.id, event.target.value);
+          topicState = state.topics[topic.id];
+          paintStatus();
+          refresh();
+        }
+      };
+      const subbox = section.querySelector(".subbox");
+      if (topic.sub) {
+        subbox.innerHTML = "<fieldset><legend>" + escapeHtml(topic.sub.question) + "</legend>" +
+          topic.sub.options.map((option) =>
+            '<label><input type="radio" name="sub-' + escapeHtml(topic.id) + '" value="' +
+            escapeHtml(option.key) + '" ' + (topicState.sub[topic.sub.key] === option.key ? "checked" : "") + ">" +
+            escapeHtml(option.label) + (option.key === topic.sub.recommended ? ' <b class="rec">推奨</b>' : "") +
+            "</label>"
+          ).join("") + "</fieldset>";
+        subbox.onchange = (event) => {
+          if (event.target.type === "radio") {
+            state = core.decideSub(state, topic.id, event.target.value);
+            topicState = state.topics[topic.id];
+            refresh();
+          }
+        };
+      }
+      const memo = section.querySelector(".memo");
+      memo.value = topicState.memo;
+      memo.oninput = () => {
+        state = core.setMemo(state, topic.id, memo.value);
+        topicState = state.topics[topic.id];
+        refresh();
+      };
+      paintStatus();
+      repaints.push(() => {
+        topicState = state.topics[topic.id];
+        decisionFieldset.querySelectorAll('input[type="radio"]').forEach((radio) =>
+          radio.checked = radio.value === topicState.decision
+        );
+        if (topic.sub) {
+          subbox.querySelectorAll("input").forEach((radio) =>
+            radio.checked = radio.value === topicState.sub[topic.sub.key]
+          );
+        }
+        paintStatus();
+      });
+    }
+    function repaintAll() {
+      repaints.forEach((repaint) => repaint());
+    }
+    select("#fill").onclick = () => {
+      state = core.fillRest(state, TOPICS);
+      repaintAll();
+      refresh();
+    };
+    // 押し間違いで裁定を消さないよう、2 度押しで確定する（Artifact では confirm() が出ない）。
+    // ダブルクリックの 2 打目で実行しないよう、構えてから 0.5 秒は 2 度目を受け付けない
+    const resetButton = select("#reset");
+    let resetTimer = null;
+    let resetArmedAt = 0;
+    function disarmReset() {
+      clearTimeout(resetTimer);
+      resetTimer = null;
+      resetButton.textContent = "裁定をリセット";
+    }
+    resetButton.onclick = () => {
+      if (!resetTimer) {
+        resetButton.textContent = "もう一度押すとリセット";
+        resetArmedAt = Date.now();
+        resetTimer = setTimeout(disarmReset, 4000);
+        return;
+      }
+      if (Date.now() - resetArmedAt < 500) return;
+      disarmReset();
+      state = core.clearDecisions(state, TOPICS);
+      repaintAll();
+      refresh();
+      select("#status").textContent = "裁定をリセットしました。メモは残しています。";
+    };
+    select("#copy").onclick = async () => {
+      const output = select("#json-out");
+      try {
+        await navigator.clipboard.writeText(output.value);
+        select("#status").textContent = "コピーしました。";
+      } catch {
+        output.focus();
+        output.select();
+        select("#status").textContent = "コピーできません。⌘C / Ctrl+C でコピーしてください。";
+      }
+    };
+    refresh();
+  })();
+</script>
