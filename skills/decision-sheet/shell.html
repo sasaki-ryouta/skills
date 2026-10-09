@@ -260,6 +260,29 @@
     border-radius: 99px;
     padding: 1px 7px;
   }
+  /* 見ている案と裁定がずれても気づけるよう、タブには裁定の札、ラジオには表示中の札を付ける */
+  .tag-decided, .tag-viewing {
+    font-size: 11px;
+    border: 1px solid;
+    border-radius: 99px;
+    padding: 1px 7px;
+  }
+  .tag-decided {
+    border-color: var(--success-line);
+    background: var(--success-bg);
+    color: var(--success-fg);
+  }
+  .tag-decided[data-state="bulk"] {
+    border-color: var(--warning-line);
+    background: var(--warning-bg);
+    color: var(--warning-fg);
+  }
+  /* 押しているタブと同じ塗りにして、どのタブを見ているかと結びつける */
+  .tag-viewing {
+    border-color: var(--ink);
+    background: var(--ink);
+    color: var(--panel);
+  }
   .ruling textarea, .export textarea {
     width: 100%;
     font: inherit;
@@ -748,6 +771,17 @@
       }
       return out;
     }
+    // 画面に出す選択肢の表記。fact や推奨の行の「A」とタブ・ラジオを突き合わせられるよう、案は key を前に出す
+    function choiceLabel(topic, value) {
+      const variant = (topic.variants || []).find((candidate) => candidate.key === value);
+      if (variant) return value === "current" ? "現状（" + variant.label + "）" : value + ". " + variant.label;
+      return ({
+        fix: "実装を設計に合わせる",
+        amend: "設計を変える",
+        hold: "保留する",
+        none: "どれも採らない（メモに方針を）",
+      })[value] ?? value;
+    }
     function buildDecisions(SHEET, TOPICS, state, exportedAt) {
       const decisions = TOPICS.map((topic) => {
         const topicState = state.topics[topic.id] || {},
@@ -797,6 +831,7 @@
       setMemo,
       setNote,
       restoreState,
+      choiceLabel,
       buildDecisions,
     };
   })();
@@ -864,16 +899,31 @@
       root.appendChild(section);
       const compare = section.querySelector(".compare");
       const decisionFieldset = section.querySelector(".ruling > fieldset");
+      // 一括で埋めた裁定は、人が選んだ裁定と見分けられるよう札の文言と色を変える
+      function paintTags() {
+        const bulk = topicState.via === "bulk";
+        section.querySelectorAll("[data-view]").forEach((button) => {
+          const tag = button.querySelector(".tag-decided");
+          tag.hidden = button.dataset.view !== topicState.decision;
+          tag.dataset.state = bulk ? "bulk" : "picked";
+          tag.textContent = bulk ? "✓一括" : "✓裁定";
+        });
+        decisionFieldset.querySelectorAll("input").forEach((radio) =>
+          radio.parentElement.querySelector(".tag-viewing").hidden = radio.value !== topicState.view
+        );
+      }
       if (topic.kind === "contrast") {
         compare.innerHTML = '<div class="contrast"><article><h3>設計</h3>' +
           escapeHtml(topic.design) + "</article><article><h3>実装</h3>" +
           escapeHtml(topic.impl) + "</article></div><p><b>推奨:</b> " +
-          escapeHtml(topic.recommended) + " — " + escapeHtml(topic.reason) + "</p>";
+          escapeHtml(core.choiceLabel(topic, topic.recommended)) + " — " + escapeHtml(topic.reason) + "</p>";
       } else {
         const buttons = topic.variants.map((variant) =>
           '<button type="button" data-view="' + escapeHtml(variant.key) +
           '" aria-pressed="' + (topicState.view === variant.key) + '">' +
-          escapeHtml(variant.label) + "</button>"
+          escapeHtml(core.choiceLabel(topic, variant.key)) +
+          (topic.recommended === variant.key ? ' <b class="rec">推奨</b>' : "") +
+          ' <b class="tag-decided" hidden>✓裁定</b></button>'
         ).join("");
         compare.innerHTML = '<div class="tabs" role="group" aria-label="見る案">' + buttons +
           '</div><p class="variant-note"></p><div class="widths">' +
@@ -881,14 +931,14 @@
           '<button type="button" data-width="100%" aria-pressed="false">PC</button>' +
           '</div><div class="frame-wrap" data-width="390px"><div class="frame"></div></div>' +
           '<div class="procon"></div><p class="legend"><i></i>点線の枠 = 現状から変わる所</p>' +
-          "<p><b>推奨:</b> " + escapeHtml(topic.recommended) + " — " +
+          "<p><b>推奨:</b> " + escapeHtml(core.choiceLabel(topic, topic.recommended)) + " — " +
           escapeHtml(topic.reason) + "</p>";
         function showVariant(variantKey) {
           state = core.view(state, topic.id, variantKey);
           topicState = state.topics[topic.id];
           const variant = topic.variants.find((candidate) => candidate.key === variantKey);
           section.querySelector(".frame").innerHTML = topic.render(variantKey, ctx);
-          section.querySelector(".variant-note").textContent = variant.label;
+          section.querySelector(".variant-note").textContent = core.choiceLabel(topic, variantKey);
           section.querySelectorAll("[data-view]").forEach((button) =>
             button.setAttribute("aria-pressed", String(button.dataset.view === variantKey))
           );
@@ -898,6 +948,7 @@
             "</ul></div><div><b>－ 気になる点</b><ul>" +
             ((variant.con || []).map((point) => "<li>" + escapeHtml(point) + "</li>").join("") || "<li>—</li>") +
             "</ul></div>";
+          paintTags();
           refresh();
         }
         section.querySelectorAll("[data-view]").forEach((button) =>
@@ -913,25 +964,24 @@
         );
         showVariant(topicState.view);
       }
-      const choices = topic.kind === "contrast"
-        ? [["fix", "実装を設計に合わせる"], ["amend", "設計を変える"], ["hold", "保留する"]]
-        : [...topic.variants.map((variant) => [variant.key, variant.key === "current" ? "現状のまま" : variant.label]),
-          ["hold", "保留する"], ["none", "どれも採らない（メモに方針を）"]];
-      decisionFieldset.innerHTML += "<div>" + choices.map(([value, label]) =>
+      const choiceValues = topic.kind === "contrast"
+        ? ["fix", "amend", "hold"]
+        : [...topic.variants.map((variant) => variant.key), "hold", "none"];
+      decisionFieldset.innerHTML += "<div>" + choiceValues.map((value) =>
         '<label><input type="radio" name="d-' + escapeHtml(topic.id) + '" value="' +
         escapeHtml(value) + '" ' + (topicState.decision === value ? "checked" : "") + "><span>" +
-        escapeHtml(label) + (topic.recommended === value ? ' <b class="rec">推奨</b>' : "") +
-        "</span></label>"
+        escapeHtml(core.choiceLabel(topic, value)) + (topic.recommended === value ? ' <b class="rec">推奨</b>' : "") +
+        ' <b class="tag-viewing" hidden>表示中</b></span></label>'
       ).join("") + "</div>";
       function paintStatus() {
-        const chosen = choices.find((choice) => choice[0] === topicState.decision);
+        paintTags();
         const status = section.querySelector(".status");
         const chipState = topicState.decision === "undecided" ? "undecided" :
           (topicState.via === "bulk" ? "bulk" : "picked");
         const chipPrefix = { picked: "裁定: ", bulk: "一括で推奨: " };
         status.dataset.state = chipState;
         status.textContent = chipState === "undecided" ? "未裁定" :
-          chipPrefix[chipState] + (chosen?.[1] || topicState.decision);
+          chipPrefix[chipState] + core.choiceLabel(topic, topicState.decision);
       }
       decisionFieldset.onchange = (event) => {
         if (event.target.type === "radio") {

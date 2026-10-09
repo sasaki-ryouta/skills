@@ -6,6 +6,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, mkdtempSync, symlinkSync, rmSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
+import vm from 'node:vm';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -81,6 +82,13 @@ test('シンボリックリンク経由で CLI を呼んでも点検が走る（
 
 test('shell.html そのままでも点検に通る（付属の例のシートが正しい）', () => {
   assert.deepEqual(codes(check(SHELL, SHELL)), []);
+});
+
+// 点検は CORE と SHEET の区画しか評価しないので、画面を組むスクリプトの構文エラーはここでしか見つからない（公開すると白紙になる）
+test('shell.html のスクリプトはすべて構文が通る', () => {
+  const scripts = [...SHELL.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((match) => match[1]);
+  assert.ok(scripts.length > 0);
+  for (const code of scripts) assert.doesNotThrow(() => new vm.Script(code));
 });
 
 test('2つの区画だけを書いたシートは点検に通る', () => {
@@ -255,6 +263,24 @@ test('案のタブを切り替えて見るだけでは、裁定は変わらな�
     ['tip', 'undecided', null],
     ['row-open', 'fix', 'pick'],
     ['pos', 'undecided', null]
+  ]);
+});
+
+test('画面の表記は案の key を前に出す（fact や推奨の行の「A」と、タブ・ラジオを突き合わせられる）', () => {
+  const s = load();
+  const [tip, rowOpen] = s.TOPICS;
+  assert.deepEqual(['A', 'B', 'current', 'hold', 'none'].map((value) => s.core.choiceLabel(tip, value)), [
+    'A. 一日の流れで並べる',
+    'B. まだの押印だけ',
+    '現状（名前を「、」でつなぐ）',
+    '保留する',
+    'どれも採らない（メモに方針を）'
+  ]);
+  // 対比の論点の推奨の行に fix のような内部の値を出さない
+  assert.deepEqual(['fix', 'amend', 'hold'].map((value) => s.core.choiceLabel(rowOpen, value)), [
+    '実装を設計に合わせる',
+    '設計を変える',
+    '保留する'
   ]);
 });
 
